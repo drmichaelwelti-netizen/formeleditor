@@ -34,6 +34,11 @@ h1{font-size:22px;line-height:1.1;margin:0;font-weight:650;flex:1}
 .tk.b{font-size:.6em;vertical-align:-.38em;line-height:1}
 .tk.p{font-size:.6em;vertical-align:.82em;line-height:1}
 .tk.op{padding:0 .22em}
+.stk{display:inline-flex;flex-direction:column;row-gap:.2em;font-size:.6em;line-height:1;vertical-align:.82em}
+.stk.pre{align-items:flex-end}.stk.post{align-items:flex-start}
+.stk .r{display:block;white-space:nowrap;min-height:1em}
+.stk .tk.b,.stk .tk.p{font-size:1em;vertical-align:baseline}
+.stk .caret,.stk .caret.p,.stk .caret.b{height:.95em;vertical-align:-.12em}
 .tk.st{font-size:.8em}
 .caret{display:inline-block;width:2px;height:1.1em;margin:0 -1px;background:var(--acc);vertical-align:-.2em;animation:bl 1.05s steps(1) infinite}
 .caret.p{height:.62em;vertical-align:.5em}
@@ -131,6 +136,7 @@ h1{font-size:22px;line-height:1.1;margin:0;font-weight:650;flex:1}
     <ul>
       <li><b>Elemente:</b> unter «ABC» Buchstaben tippen (Grossbuchstabe zuerst, «abc» für den Kleinbuchstaben) oder unter «PSE» das Element direkt antippen.</li>
       <li><b>Stellung von Zahlen und Vorzeichen:</b> ganz links «x² hoch», «x2 normal» oder «x₂ tief» wählen. Die gewählte Stellung gilt für alle folgenden Zahlen und für + und −, bis eine andere gewählt wird. Die Zifferntasten, die Tasten + und − und der Cursor zeigen die gewählte Stellung an.</li>
+      <li>Stehen hoch- und tiefgestellte Zeichen direkt hintereinander, zeigt der Editor sie übereinander. Im eingefügten Text stehen sie nebeneinander.</li>
       <li>Pfeile, Klammern, Aggregatzustände und der Punkt · haben eigene Tasten.</li>
     </ul>
     <h3>Bearbeiten</h3>
@@ -256,16 +262,29 @@ function outText(){const L=rawLines().map(norm);while(L.length&&!L[0])L.shift();
 /* ---------- Darstellung ---------- */
 const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function cls(x){if(x.s!=='n')return x.s;if(x.t===' ')return 'sp';if(OPS.has(x.t))return 'op';if(x.k==='st')return 'st';return 'n'}
+function tokHtml(i){const x=T[i],c=cls(x);
+  return '<span class="tk '+c+'" data-i="'+i+'">'+esc(x.s==='n'?x.t:(x.t==='-'?'−':x.t))+'</span>'+(c==='op'?'<wbr>':'')}
+/* Hoch- und tiefgestellte Zeichen direkt hintereinander werden übereinander gezeigt (nur im Editor). */
 function render(){
   const caret='<span class="caret '+(mode||'')+'"></span>';
-  const lines=[];let h='';
-  for(let i=0;i<=T.length;i++){
+  const lines=[];let h='',i=0;
+  while(i<=T.length){
     if(i===cur)h+=caret;
     if(i===T.length)break;
     const x=T[i];
-    if(x.t==='\n'){h+='<span class="tk nl" data-i="'+i+'"></span>';lines.push(h);h='';continue}
-    const c=cls(x);
-    h+='<span class="tk '+c+'" data-i="'+i+'">'+esc(x.s==='n'?x.t:(x.t==='-'?'−':x.t))+'</span>'+(c==='op'?'<wbr>':'');
+    if(x.t==='\n'){h+='<span class="tk nl" data-i="'+i+'"></span>';lines.push(h);h='';i++;continue}
+    if(x.s!=='n'){
+      let j=i;while(j<T.length&&T[j].s!=='n')j++;
+      const ks=[];for(let k=i;k<j;k++)ks.push(k);
+      if(ks.some(k=>T[k].s==='p')&&ks.some(k=>T[k].s==='b')){
+        const prev=T[i-1],next=T[j];
+        const pre=(!prev||prev.t===' '||prev.t==='\n'||prev.t==='·'||OPS.has(prev.t))&&next&&next.t!==' '&&next.t!=='\n';
+        const row=st=>ks.filter(k=>T[k].s===st).map(k=>tokHtml(k)+(cur===k+1&&k+1<j?caret:'')).join('');
+        h+='<span class="stk '+(pre?'pre':'post')+'"><span class="r">'+row('p')+'</span><span class="r">'+row('b')+'</span></span>';
+        i=j;continue;
+      }
+    }
+    h+=tokHtml(i);i++;
   }
   lines.push(h);
   ed.innerHTML=(mode?'<span class="pill">'+(mode==='p'?'hochgestellt':'tiefgestellt')+'</span>':'')+
@@ -352,13 +371,25 @@ ed.addEventListener('pointerdown',e=>{
   const lines=[...ed.querySelectorAll('.line')];if(!lines.length)return;
   let line=lines[lines.length-1],best=1e9;
   for(const l of lines){const r=l.getBoundingClientRect();const d=e.clientY<r.top?r.top-e.clientY:e.clientY>r.bottom?e.clientY-r.bottom:0;if(d<best){best=d;line=l}}
-  const toks=[...line.querySelectorAll('.tk:not(.nl)')];
-  const first=line.querySelector('.tk');
-  if(!toks.length){const n=+line.dataset.l;let i=0,c=0;while(c<n&&i<T.length){if(T[i].t==='\n')c++;i++}return setCur(i)}
-  let rowBest=1e9;const R=toks.map(t=>{const r=t.getBoundingClientRect();const d=e.clientY<r.top?r.top-e.clientY:e.clientY>r.bottom?e.clientY-r.bottom:0;if(d<rowBest)rowBest=d;return{t,r,d}});
-  const row=R.filter(o=>o.d<=rowBest+8);
-  for(const o of row){if(e.clientX<o.r.left+o.r.width/2)return setCur(+o.t.dataset.i)}
-  setCur(+row[row.length-1].t.dataset.i+1);
+  const els=[...line.children].filter(el=>el.matches('.tk:not(.nl),.stk'));
+  if(!els.length){const n=+line.dataset.l;let i=0,c=0;while(c<n&&i<T.length){if(T[i].t==='\n')c++;i++}return setCur(i)}
+  const X=e.clientX,Y=e.clientY,dist=r=>Y<r.top?r.top-Y:Y>r.bottom?Y-r.bottom:0;
+  const idx=el=>[...(el.classList.contains('stk')?el.querySelectorAll('.tk'):[el])].map(t=>+t.dataset.i);
+  let rowBest=1e9;const R=els.map(el=>{const r=el.getBoundingClientRect(),d=dist(r);if(d<rowBest)rowBest=d;return{el,r,d}});
+  const row=R.filter(o=>o.d<=rowBest+8).sort((a,b)=>a.r.left-b.r.left);
+  for(const o of row){
+    const ii=idx(o.el),lo=Math.min(...ii),hi=Math.max(...ii)+1;
+    if(X<o.r.left)return setCur(lo);
+    if(X>o.r.right)continue;
+    if(!o.el.classList.contains('stk'))return setCur(X<o.r.left+o.r.width/2?lo:hi);
+    /* Stapel: oberhalb der Mitte die hochgestellte Reihe, sonst die tiefgestellte */
+    const rr=o.el.children[Y<o.r.top+o.r.height/2?0:1],ts=[...rr.querySelectorAll('.tk')];
+    if(!ts.length)return setCur(X<o.r.left+o.r.width/2?lo:hi);
+    for(const t of ts){const q=t.getBoundingClientRect();if(X<q.left+q.width/2)return setCur(+t.dataset.i)}
+    return setCur(+ts[ts.length-1].dataset.i+1);
+  }
+  const last=row.reduce((a,b)=>b.r.right>a.r.right?b:a);
+  setCur(Math.max(...idx(last.el))+1);
 });
 cap.addEventListener('focus',()=>ed.classList.add('focus'));
 cap.addEventListener('blur',()=>ed.classList.remove('focus'));
