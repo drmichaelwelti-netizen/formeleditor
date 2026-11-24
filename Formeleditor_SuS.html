@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chemische Formeln und Reaktionsgleichungen</title>
+<style>
+/* VOICE: ruhiges Werkzeug für Prüfungen, nichts lenkt ab, alles gross genug für Finger.
+   IDEA: eine Zeile im Laborjournal: liniertes Papier, darunter eine Chemie-Tastatur.
+   PICTURE: der Editor selbst mit grosser Formelschrift und blinkendem Cursor.
+   COLOUR and TYPE: Weiss und Tinte, Akzent Phenolphthalein-Pink für aktive Modi; Systemschrift.
+   LAYOUT: Editor, darunter Vorschau mit Kopierknopf, darunter Tastatur; unter 640px gestapelt. */
+:root{--bg:#ffffff;--ink:#11232c;--mut:#5d6b72;--line:#cfd6da;--rule:#e3e8ea;--surf:#ffffff;
+  --key:#eceeee;--keyfn:#d9dddf;--keydn:#c4cacd;--sh:#b9c0c3;--acc:#c2185b;--accsoft:#fde4ef;--accink:#ffffff;--task:#f5f6f6}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d171c;--ink:#e6eef1;--mut:#9aabb3;--line:#33444c;
+  --rule:#22323a;--surf:#111e24;--key:#1f2d34;--keyfn:#2a3a42;--keydn:#3a4c55;--sh:#071014;--acc:#ff5c9a;--accsoft:#4a1832;--accink:#1a0710;--task:#15232a}}
+:root[data-theme=dark]{--bg:#0d171c;--ink:#e6eef1;--mut:#9aabb3;--line:#33444c;--rule:#22323a;--surf:#111e24;
+  --key:#1f2d34;--keyfn:#2a3a42;--keydn:#3a4c55;--sh:#071014;--acc:#ff5c9a;--accsoft:#4a1832;--accink:#1a0710;--task:#15232a}
+*{box-sizing:border-box;min-width:0}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;overflow-x:clip}
+.wrap{max-width:1120px;margin:0 auto;padding:12px max(12px,2vw) 16px;display:flex;flex-direction:column;gap:10px}
+header{display:flex;align-items:center;gap:10px}
+h1{font-size:22px;line-height:1.1;margin:0;font-weight:650;flex:1}
+.hb{height:40px;padding:0 14px;border:1px solid var(--line);background:var(--surf);color:var(--ink);border-radius:10px;font:inherit;font-size:15px;cursor:pointer}
+.hb.q{width:40px;padding:0;font-weight:700;font-size:18px}
+.task{background:var(--task);border-radius:10px;padding:8px 12px;font-size:17px;white-space:pre-wrap}
+.task b{font-weight:600;color:var(--mut);font-size:14px;display:block}
+.ed{position:relative;border:2px solid var(--line);border-radius:12px;background:var(--surf);padding:6px 16px 8px;min-height:118px;
+  max-height:42vh;overflow-y:auto;font-size:30px;line-height:1.8;cursor:text;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
+.ed.focus{border-color:var(--acc)}
+.line{min-height:1.8em;white-space:pre-wrap;overflow-wrap:anywhere;border-bottom:1px dashed var(--rule)}
+.tk.b{font-size:.6em;vertical-align:-.38em;line-height:1}
+.tk.p{font-size:.6em;vertical-align:.82em;line-height:1}
+.tk.op{padding:0 .22em}
+.stk{display:inline-flex;flex-direction:column;row-gap:.2em;font-size:.6em;line-height:1;vertical-align:.82em}
+.stk.pre{align-items:flex-end}.stk.post{align-items:flex-start}
+.stk .r{display:block;white-space:nowrap;min-height:1em}
+.stk .tk.b,.stk .tk.p{font-size:1em;vertical-align:baseline}
+.stk .caret,.stk .caret.p,.stk .caret.b{height:.95em;vertical-align:-.12em}
+.tk.st{font-size:.8em}
+.caret{display:inline-block;width:2px;height:1.1em;margin:0 -1px;background:var(--acc);vertical-align:-.2em;animation:bl 1.05s steps(1) infinite}
+.caret.p{height:.62em;vertical-align:.5em}
+.caret.b{height:.62em;vertical-align:-.35em}
+@keyframes bl{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.caret{animation:none}}
+.ph{position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--mut);pointer-events:none;padding-left:8px}
+.pill{position:sticky;float:right;top:0;margin-top:6px;font:600 13px/1 -apple-system,"Segoe UI",sans-serif;background:var(--acc);color:var(--accink);border-radius:99px;padding:6px 10px}
+.outrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}
+.out{border:1px solid var(--line);border-radius:10px;padding:6px 12px;background:var(--surf)}
+.out .lbl{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--mut)}
+#msg{color:var(--acc);font-weight:600;text-align:right}
+#out{font:20px/1.5 Arial,Helvetica,sans-serif;white-space:pre-wrap;min-height:30px;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere}
+#out:empty::before{content:"–";color:var(--mut)}
+#copy{min-width:150px;border:0;border-radius:10px;background:var(--acc);color:var(--accink);font:inherit;font-size:19px;font-weight:650;padding:0 18px;cursor:pointer}
+#copy.ok{background:var(--ink);color:var(--bg)}
+.pad{display:flex;flex-direction:column;gap:6px}
+.top{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,7fr) minmax(0,4fr);grid-template-areas:"m c n";gap:10px}
+.modes{grid-area:m;display:grid;grid-template-rows:repeat(3,auto);gap:6px}.chem{grid-area:c}.num{grid-area:n}
+.chem{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.num{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.key.mode{flex-direction:column;gap:1px;line-height:1}.mode .mx{font-size:19px}.mode small{font-size:11.5px}
+.bar{display:flex;gap:6px}
+.bar .sp{flex:1}
+.key{height:44px;border:0;border-radius:8px;background:var(--key);color:var(--ink);font:inherit;font-size:20px;box-shadow:0 1px 0 var(--sh);
+  cursor:pointer;padding:0 4px;display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.key.fn{background:var(--keyfn);font-size:18px}
+.key.dn,.key:active{background:var(--keydn)}
+.key.on{background:var(--accsoft);color:var(--acc);box-shadow:inset 0 0 0 2px var(--acc)}
+.key small{font-size:12px}
+.key.st{font-size:17px}
+.key.wide{flex:1}
+.bar .key{min-width:56px}
+.tab{min-width:70px;font-size:16px;font-weight:600}
+.dg span{display:inline-block;transition:transform .08s}
+.sg,.sb{display:inline-block;font-size:.8em}.sg{transform:translateY(-.42em)}.sb{transform:translateY(.32em)}
+.key .short{display:none}
+.num[data-s=b] .dg span{transform:translateY(.32em) scale(.72)}
+.num[data-s=p] .dg span{transform:translateY(-.38em) scale(.72)}
+.abc{display:flex;flex-direction:column;gap:6px;max-width:800px;width:100%;margin:0 auto}
+.abc .row{display:flex;gap:6px;justify-content:center}
+.abc .key{flex:0 0 calc((100% - 54px)/10)}
+.abc .key.sh{flex-basis:calc((100% - 54px)/10*1.5)}
+.pse{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));grid-template-rows:repeat(7,31px) 5px repeat(2,27px);gap:3px}
+.pse .key{height:auto;font-size:15px;border-radius:5px;padding:0}
+.pse .key.f{font-size:14px}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+#cap{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;resize:none;pointer-events:none}
+.dlg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:4vh 12px;z-index:9;overflow-y:auto}
+.dlg[hidden]{display:none}
+.box{background:var(--bg);color:var(--ink);border-radius:14px;max-width:640px;width:100%;padding:18px 22px 20px;-webkit-user-select:text;user-select:text}
+.box h2{font-size:22px;margin:0 0 8px}
+.box h3{font-size:17px;margin:16px 0 4px}
+.box ul{margin:4px 0;padding-left:20px}
+.box li{margin:3px 0}
+.box code{background:var(--task);border-radius:4px;padding:1px 5px;font-size:15px;overflow-wrap:anywhere}
+.box .x{float:right}
+.box details{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.box summary{cursor:pointer;font-weight:600}
+@media (max-width:640px){h1{font-size:18px}.top{grid-template-columns:minmax(0,1.25fr) minmax(0,4fr);grid-template-areas:"c c" "m n"}.ed{font-size:26px}.key{height:42px;font-size:18px}
+  .key .long{display:none}.key .short{display:inline}.bar .key{min-width:0;flex:1}.bar .key.wide{flex:1.6}.bar .sp{display:none}.tab{min-width:0}
+  .outrow{grid-template-columns:minmax(0,1fr)}#copy{height:48px}.pse{grid-template-rows:repeat(7,30px) 4px repeat(2,26px);gap:2px}.pse .key{font-size:11px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Chemische Formeln und Reaktionsgleichungen</h1>
+    <button class="hb" id="clear" type="button">Leeren</button>
+    <button class="hb q" id="helpbtn" type="button" aria-label="Anleitung">?</button>
+  </header>
+  <div class="task" id="task" hidden></div>
+  <div class="ed" id="ed" role="textbox" aria-label="Formel oder Reaktionsgleichung" aria-multiline="true"></div>
+  <div class="outrow">
+    <div class="out"><small class="lbl"><span>So wird der Text eingefügt</span><span id="msg" aria-live="polite"></span></small><div id="out"></div></div>
+    <button id="copy" type="button">Kopieren</button>
+  </div>
+  <div class="pad" id="pad">
+    <div class="top">
+      <div class="modes" id="modes" role="group" aria-label="Stellung der Zahlen und Vorzeichen"></div>
+      <div class="chem" id="chem"></div>
+      <div class="num" id="num"></div>
+    </div>
+    <div class="bar" id="bar"></div>
+    <div id="letters"></div>
+  </div>
+</div>
+<textarea id="cap" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1"></textarea>
+
+<div class="dlg" id="help" hidden>
+  <div class="box" role="dialog" aria-label="Anleitung">
+    <button class="hb x" id="helpx" type="button">Schliessen</button>
+    <h2>Anleitung</h2>
+    <h3>Formeln eingeben</h3>
+    <ul>
+      <li><b>Elemente:</b> unter «ABC» Buchstaben tippen (Grossbuchstabe zuerst, «abc» für den Kleinbuchstaben) oder unter «PSE» das Element direkt antippen.</li>
+      <li><b>Stellung von Zahlen und Vorzeichen:</b> ganz links «x² hoch», «x2 normal» oder «x₂ tief» wählen. Die gewählte Stellung gilt für alle folgenden Zahlen und für + und −, bis eine andere gewählt wird. Die Zifferntasten, die Tasten + und − und der Cursor zeigen die gewählte Stellung an.</li>
+      <li>Stehen hoch- und tiefgestellte Zeichen direkt hintereinander, zeigt der Editor sie übereinander. Im eingefügten Text stehen sie nebeneinander.</li>
+      <li>Pfeile, Klammern, Aggregatzustände und der Punkt · haben eigene Tasten.</li>
+    </ul>
+    <h3>Bearbeiten</h3>
+    <ul>
+      <li>In die Gleichung tippen setzt den Cursor. ◀ und ▶ verschieben ihn, ⌫ löscht das Zeichen links davon.</li>
+      <li>↵ beginnt eine neue Zeile, z. B. für Teilgleichungen.</li>
+      <li>↶ macht den letzten Schritt rückgängig, auch «Leeren».</li>
+      <li>Die Gleichung bleibt nach dem Neuladen der Seite erhalten.</li>
+    </ul>
+    <h3>In isTest einfügen</h3>
+    <ul>
+      <li>«Kopieren» antippen, dann in isTest ins Antwortfeld tippen und «Einsetzen» wählen.</li>
+      <li>Eingefügt wird genau der Text im Feld «So wird der Text eingefügt».</li>
+    </ul>
+    <h3>Mit Tastatur</h3>
+    <ul>
+      <li>Zahlen erscheinen in der gewählten Stellung. <code>^</code> schaltet «hoch» ein und aus, <code>_</code> schaltet «tief» ein und aus, Esc stellt auf «normal».</li>
+      <li><code>-&gt;</code> ergibt →, <code>&lt;=&gt;</code> ergibt ⇌, <code>*</code> ergibt ·.</li>
+      <li>Enter: neue Zeile. Ctrl/⌘ + Z: rückgängig. Ctrl/⌘ + C: kopieren.</li>
+    </ul>
+    <details>
+      <summary>Für Lehrpersonen</summary>
+      <ul>
+        <li><code>?aufgabe=…</code> zeigt einen Aufgabentext über dem Editor.</li>
+        <li><code>?id=…</code> trennt den Speicher, wenn eine Prüfung mehrere Aufgaben mit dem Editor hat.</li>
+        <li><code>?pse=nein</code> blendet das Periodensystem aus, dann gibt es nur «ABC».</li>
+        <li>Beispiel: <code>?id=a3&amp;aufgabe=Verbrennung%20von%20Methan</code></li>
+        <li>Der Editor stellt keine Zahl und kein Vorzeichen selbst hoch oder tief. Die Lernenden müssen die Stellung jedes Zeichens selbst wählen, auch bei Ladungen und beim Elektron (e, dann «hoch» und −).</li>
+        <li>Die Ausgabe ist einheitlich gesetzt (je ein Leerzeichen um +, Pfeile und ·, eines nach einer normal gestellten Zahl vor einer Formel). Eine Musterlösung, die mit diesem Editor erstellt wurde, ist darum Zeichen für Zeichen gleich wie eine richtige Antwort.</li>
+      </ul>
+    </details>
+  </div>
+</div>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const Q=new URLSearchParams(location.search);
+const ID=(Q.get('id')||'standard').slice(0,60);
+const KEY='reaktionsgleichung:'+ID;
+const PSE_ON=!/^(nein|0|aus|false|no)$/i.test(Q.get('pse')||'');
+const TASK=Q.get('aufgabe');
+
+const ed=$('#ed'),out=$('#out'),cap=$('#cap'),msgEl=$('#msg'),copyBtn=$('#copy');
+const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','−':'⁻','-':'⁻'};
+const SUB={'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','−':'₋','-':'₋'};
+const RSUP={},RSUB={};
+for(const k in SUP)if(k!=='-')RSUP[SUP[k]]=k;
+for(const k in SUB)if(k!=='-')RSUB[SUB[k]]=k;
+const OPS=new Set(['+','→','⇌','⇄','←','=']);
+
+let T=[],cur=0,mode=null,lower=false,lowerLock=false,lastShift=0,tab='abc',hist=[],batch=false,msgTimer=0,copyTimer=0;
+
+/* ---------- Speicher ---------- */
+function save(){try{localStorage.setItem(KEY,JSON.stringify({v:1,T,cur,tab}))}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');
+  if(d&&Array.isArray(d.T)){T=d.T.filter(x=>x&&typeof x.t==='string'&&/^[nbp]$/.test(x.s)).map(x=>({t:x.t.slice(0,8),s:x.s,k:x.k==='el'||x.k==='st'?x.k:undefined}));
+    cur=Math.max(0,Math.min(T.length,+d.cur||0));if(d.tab==='pse'&&PSE_ON)tab='pse';}}catch(e){}}
+
+/* ---------- Bearbeiten ---------- */
+function snap(){if(batch)return;hist.push(JSON.stringify([T,cur]));if(hist.length>300)hist.shift()}
+function done(){if(batch)return;save();render()}
+function put(arr){if(T.length+arr.length>3000)return;snap();T.splice(cur,0,...arr);cur+=arr.length;done()}
+function put1(ch,k){put([k?{t:ch,s:'n',k}:{t:ch,s:'n'}])}
+/* Die Stellung (normal, tief, hoch) wählen die Lernenden selbst. Sie gilt, bis sie gewechselt wird. */
+function dstyle(){return mode||'n'}
+function setMode(m){mode=m;render()}
+function digit(d){put([{t:d,s:dstyle()}])}
+function sign(ch){put([{t:ch,s:dstyle()}])}
+function other(ch,k){put1(ch,k)}
+function back(){if(!cur)return;snap();T.splice(cur-1,1);cur--;done()}
+function del(){if(cur>=T.length)return;snap();T.splice(cur,1);done()}
+function setCur(c){cur=Math.max(0,Math.min(T.length,c));save();render()}
+function lineStart(c){let i=c;while(i>0&&T[i-1].t!=='\n')i--;return i}
+function lineEnd(c){let i=c;while(i<T.length&&T[i].t!=='\n')i++;return i}
+function vert(d){const s=lineStart(cur),col=cur-s;
+  if(d<0){if(s===0)return setCur(0);const ps=lineStart(s-1);setCur(Math.min(ps+col,s-1))}
+  else{const e=lineEnd(cur);if(e>=T.length)return setCur(T.length);const ns=e+1;setCur(Math.min(ns+col,lineEnd(ns)))}}
+function repl(start,n,ch){snap();T.splice(start,n,{t:ch,s:'n'});cur=start+1;done()}
+function gt(){
+  const a=T[cur-1],b=T[cur-2],N=x=>x&&x.s==='n';
+  if(a&&(a.t==='-'||a.t==='−'||(a.s==='n'&&a.t==='='))){
+    if(N(b)&&b.t==='<')return repl(cur-2,2,'⇌');
+    return repl(cur-1,1,'→');
+  }
+  other('>');
+}
+function undo(){const h=hist.pop();if(!h)return flash('Nichts mehr rückgängig zu machen.');const d=JSON.parse(h);T=d[0];cur=d[1];save();render()}
+function clearAll(){if(!T.length)return;snap();T=[];cur=0;done();flash('Geleert. Mit ↶ lässt es sich zurückholen.')}
+
+function typeChar(ch){
+  if(/^[0-9]$/.test(ch))return digit(ch);
+  if(ch==='+')return sign('+');
+  if(ch==='-'||ch==='−'){if(mode)return sign('−');return other(ch)}
+  if(ch==='>')return gt();
+  if(ch==='^'){mode=mode==='p'?null:'p';return batch?0:render()}
+  if(ch==='_'){mode=mode==='b'?null:'b';return batch?0:render()}
+  if(ch==='*')return other('·');
+  if(ch==='\r')return;
+  if(ch==='\n')return put1('\n');
+  if(ch==='\t'||ch===' ')ch=' ';
+  if(RSUB[ch])return put([{t:RSUB[ch],s:'b'}]);
+  if(RSUP[ch])return put([{t:RSUP[ch],s:'p'}]);
+  if(ch==='⟶')ch='→';
+  if(ch.charCodeAt(0)<32)return;
+  other(ch);
+}
+function typeText(str){if(!str)return;snap();batch=true;try{for(const ch of str)typeChar(ch)}finally{batch=false}save();render()}
+function pasteText(str){const m=mode;mode=null;typeText(str);mode=m;render()}
+
+/* ---------- Ausgabe ---------- */
+function rawLines(){const L=[''];for(const x of T){if(x.t==='\n'){L.push('');continue}
+  L[L.length-1]+=x.s==='p'?(SUP[x.t]||x.t):x.s==='b'?(SUB[x.t]||x.t):x.t}return L}
+function norm(s){
+  s=s.replace(/[ \t]+/g,' ');
+  s=s.replace(/ ?([+→⇌⇄←=]) ?/g,' $1 ');
+  s=s.replace(/ ?· ?/g,' · ');
+  s=s.replace(/(^| )(\d+(?:[.,]\d+)?|\d+\/\d+|½)(?=[A-Za-zΔ(\[])/g,'$1$2 ');
+  return s.replace(/ {2,}/g,' ').trim();
+}
+function outText(){const L=rawLines().map(norm);while(L.length&&!L[0])L.shift();while(L.length&&!L[L.length-1])L.pop();return L.join('\n')}
+
+/* ---------- Darstellung ---------- */
+const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function cls(x){if(x.s!=='n')return x.s;if(x.t===' ')return 'sp';if(OPS.has(x.t))return 'op';if(x.k==='st')return 'st';return 'n'}
+function tokHtml(i){const x=T[i],c=cls(x);
+  return '<span class="tk '+c+'" data-i="'+i+'">'+esc(x.s==='n'?x.t:(x.t==='-'?'−':x.t))+'</span>'+(c==='op'?'<wbr>':'')}
+/* Hoch- und tiefgestellte Zeichen direkt hintereinander werden übereinander gezeigt (nur im Editor). */
+function render(){
+  const caret='<span class="caret '+(mode||'')+'"></span>';
+  const lines=[];let h='',i=0;
+  while(i<=T.length){
+    if(i===cur)h+=caret;
+    if(i===T.length)break;
+    const x=T[i];
+    if(x.t==='\n'){h+='<span class="tk nl" data-i="'+i+'"></span>';lines.push(h);h='';i++;continue}
+    if(x.s!=='n'){
+      let j=i;while(j<T.length&&T[j].s!=='n')j++;
+      const ks=[];for(let k=i;k<j;k++)ks.push(k);
+      if(ks.some(k=>T[k].s==='p')&&ks.some(k=>T[k].s==='b')){
+        const prev=T[i-1],next=T[j];
+        const pre=(!prev||prev.t===' '||prev.t==='\n'||prev.t==='·'||OPS.has(prev.t))&&next&&next.t!==' '&&next.t!=='\n';
+        const row=st=>ks.filter(k=>T[k].s===st).map(k=>tokHtml(k)+(cur===k+1&&k+1<j?caret:'')).join('');
+        h+='<span class="stk '+(pre?'pre':'post')+'"><span class="r">'+row('p')+'</span><span class="r">'+row('b')+'</span></span>';
+        i=j;continue;
+      }
+    }
+    h+=tokHtml(i);i++;
+  }
+  lines.push(h);
+  ed.innerHTML=(mode?'<span class="pill">'+(mode==='p'?'hochgestellt':'tiefgestellt')+'</span>':'')+
+    lines.map((l,n)=>'<div class="line" data-l="'+n+'">'+l+'</div>').join('')+
+    (T.length?'':'<span class="ph">Formel oder Gleichung über die Tasten unten eingeben</span>');
+  out.textContent=outText();
+  updateKeys();
+  const c=ed.querySelector('.caret');
+  if(c){const er=ed.getBoundingClientRect(),cr=c.getBoundingClientRect();
+    if(cr.bottom>er.bottom-4)ed.scrollTop+=cr.bottom-er.bottom+12;else if(cr.top<er.top+4)ed.scrollTop-=er.top-cr.top+12;}
+}
+
+/* ---------- Tasten ---------- */
+const CHEM=[
+  ['sign:+','+','pm','Plus'],['sign:−','−','pm','Minus'],['c:→','→','','Reaktionspfeil'],['c:⇌','⇌','','Gleichgewichtspfeil'],
+  ['c:↑','↑','','Pfeil nach oben'],['c:↓','↓','','Pfeil nach unten'],['c:Δ','Δ','','Delta'],
+  ['c:(','(','',''],['c:)',')','',''],['c:[','[','',''],['c:]',']','',''],['c:·','·','','Punkt'],['c:½','½','','ein halb'],['c:=','=','',''],
+  ['st:(s)','(s)','st','fest'],['st:(l)','(l)','st','flüssig'],['st:(g)','(g)','st','gasförmig'],['st:(aq)','(aq)','st','gelöst in Wasser'],
+  ['c:,',',','','Komma'],['left','◀','fn','Cursor nach links'],['right','▶','fn','Cursor nach rechts']
+];
+const NUM=['7','8','9','back','4','5','6','nl','1','2','3','0'];
+const MODE={'m:p':['x²','hoch','Zahlen hochgestellt'],'m:n':['x2','normal','Zahlen normal'],'m:b':['x₂','tief','Zahlen tiefgestellt']};
+const FN={back:['⌫','Löschen'],nl:['↵','Neue Zeile'],left:['◀','Cursor nach links'],right:['▶','Cursor nach rechts'],space:['<span class="long">Leerschlag</span><span class="short">␣</span>','Leerzeichen'],undo:['↶','Rückgängig']};
+const REP=new Set(['back','left','right']);
+const btn=(k,l,c,a)=>'<button type="button" tabindex="-1" class="key '+(c||'')+'" data-k="'+esc(k)+'"'+(a?' aria-label="'+esc(a)+'"':'')+'>'+l+'</button>';
+$('#chem').innerHTML=CHEM.map(x=>btn(x[0],x[1],x[2],x[3])).join('');
+$('#modes').innerHTML=Object.keys(MODE).map(k=>btn(k,'<span class="mx">'+MODE[k][0]+'</span><small>'+MODE[k][1]+'</small>','fn mode',MODE[k][2])).join('');
+$('#num').innerHTML=NUM.map(k=>FN[k]?btn(k,FN[k][0],'fn',FN[k][1]):btn('d:'+k,'<span>'+k+'</span>','dg')).join('');
+$('#bar').innerHTML=btn('tab:abc','ABC','tab fn')+(PSE_ON?btn('tab:pse','PSE','tab fn','Periodensystem'):'')+btn('space',FN.space[0],'fn wide',FN.space[1])+btn('undo',FN.undo[0],'fn',FN.undo[1]);
+const ROWS=['QWERTZUIOP','ASDFGHJKL','YXCVBNM'];
+function abcHtml(){return '<div class="abc">'+ROWS.map((r,i)=>'<div class="row">'+(i===2?btn('shift','abc','fn sh','Kleinbuchstaben'):'')+
+  [...r].map(ch=>btn('L:'+ch,ch,'lt')).join('')+'</div>').join('')+'</div>'}
+const PT=['H . . . . . . . . . . . . . . . . He','Li Be . . . . . . . . . . B C N O F Ne','Na Mg . . . . . . . . . . Al Si P S Cl Ar',
+  'K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr','Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe',
+  'Cs Ba La Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn','Fr Ra Ac Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og',null,
+  '. . . Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu .','. . . Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr .'];
+function pseHtml(){let h='';PT.forEach((r,ri)=>{if(!r)return;r.split(' ').forEach((s,ci)=>{if(s==='.')return;
+  h+=btn('el:'+s,s,'el'+(ri>7?' f':''),'').replace('<button','<button style="grid-row:'+(ri+1)+';grid-column:'+(ci+1)+'"')})});return '<div class="pse">'+h+'</div>'}
+function renderLetters(){$('#letters').innerHTML=tab==='pse'?pseHtml():abcHtml();updateKeys()}
+function updateKeys(){
+  const s=dstyle();$('#num').dataset.s=s;
+  document.querySelectorAll('.mode').forEach(b=>{const on=b.dataset.k==='m:'+s;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+  const pl=$('[data-k="sign:+"]'),mi=$('[data-k="sign:−"]');
+  const w=c=>mode==='p'?'<span class="sg">'+c+'</span>':mode==='b'?'<span class="sb">'+c+'</span>':c;pl.innerHTML=w('+');mi.innerHTML=w('−');
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.k==='tab:'+tab));
+  const sh=$('[data-k=shift]');
+  if(sh){sh.textContent=lower?'ABC':'abc';sh.classList.toggle('on',lowerLock);sh.setAttribute('aria-label',lower?'Grossbuchstaben':'Kleinbuchstaben');
+    document.querySelectorAll('.lt').forEach(b=>{const c=b.dataset.k.slice(2);b.textContent=lower?c.toLowerCase():c})}
+}
+function act(k){
+  if(MODE[k])return setMode(k==='m:n'?null:k.slice(2));
+  if(k==='back')return back();
+  if(k==='nl')return put1('\n');
+  if(k==='left')return setCur(cur-1);
+  if(k==='right')return setCur(cur+1);
+  if(k==='space')return other(' ');
+  if(k==='undo')return undo();
+  if(k==='shift'){const now=Date.now();
+    if(lowerLock){lowerLock=false;lower=false}else if(lower&&now-lastShift<450){lowerLock=true}else lower=!lower;
+    lastShift=now;return updateKeys()}
+  if(k.startsWith('tab:')){tab=k.slice(4);save();return renderLetters()}
+  const v=k.slice(k.indexOf(':')+1);
+  if(k.startsWith('d:'))return digit(v);
+  if(k.startsWith('sign:'))return sign(v);
+  if(k.startsWith('c:'))return other(v);
+  if(k.startsWith('st:'))return other(v,'st');
+  if(k.startsWith('el:'))return other(v,'el');
+  if(k.startsWith('L:')){const ch=lower?v.toLowerCase():v;if(lower&&!lowerLock)lower=false;return other(ch)}
+}
+
+/* Tippen auf Tasten: Fokus nicht verschieben, Löschen und Pfeile wiederholen beim Halten */
+let repT=0,repI=0;
+function stopRep(){clearTimeout(repT);clearInterval(repI);document.querySelectorAll('.key.dn').forEach(b=>b.classList.remove('dn'))}
+const pad=$('#pad');
+pad.addEventListener('pointerdown',e=>{const b=e.target.closest('.key');if(!b)return;e.preventDefault();b.classList.add('dn');
+  const k=b.dataset.k;if(REP.has(k)){act(k);repT=setTimeout(()=>{repI=setInterval(()=>act(k),70)},430)}});
+['pointerup','pointercancel','pointerleave'].forEach(t=>pad.addEventListener(t,stopRep));
+pad.addEventListener('click',e=>{const b=e.target.closest('.key');if(!b)return;const k=b.dataset.k;
+  if(REP.has(k)&&e.detail!==0)return;act(k)});
+
+/* Cursor setzen durch Tippen in die Gleichung */
+ed.addEventListener('pointerdown',e=>{
+  e.preventDefault();try{cap.focus({preventScroll:true})}catch(_){cap.focus()}
+  const lines=[...ed.querySelectorAll('.line')];if(!lines.length)return;
+  let line=lines[lines.length-1],best=1e9;
+  for(const l of lines){const r=l.getBoundingClientRect();const d=e.clientY<r.top?r.top-e.clientY:e.clientY>r.bottom?e.clientY-r.bottom:0;if(d<best){best=d;line=l}}
+  const els=[...line.children].filter(el=>el.matches('.tk:not(.nl),.stk'));
+  if(!els.length){const n=+line.dataset.l;let i=0,c=0;while(c<n&&i<T.length){if(T[i].t==='\n')c++;i++}return setCur(i)}
+  const X=e.clientX,Y=e.clientY,dist=r=>Y<r.top?r.top-Y:Y>r.bottom?Y-r.bottom:0;
+  const idx=el=>[...(el.classList.contains('stk')?el.querySelectorAll('.tk'):[el])].map(t=>+t.dataset.i);
+  let rowBest=1e9;const R=els.map(el=>{const r=el.getBoundingClientRect(),d=dist(r);if(d<rowBest)rowBest=d;return{el,r,d}});
+  const row=R.filter(o=>o.d<=rowBest+8).sort((a,b)=>a.r.left-b.r.left);
+  for(const o of row){
+    const ii=idx(o.el),lo=Math.min(...ii),hi=Math.max(...ii)+1;
+    if(X<o.r.left)return setCur(lo);
+    if(X>o.r.right)continue;
+    if(!o.el.classList.contains('stk'))return setCur(X<o.r.left+o.r.width/2?lo:hi);
+    /* Stapel: oberhalb der Mitte die hochgestellte Reihe, sonst die tiefgestellte */
+    const rr=o.el.children[Y<o.r.top+o.r.height/2?0:1],ts=[...rr.querySelectorAll('.tk')];
+    if(!ts.length)return setCur(X<o.r.left+o.r.width/2?lo:hi);
+    for(const t of ts){const q=t.getBoundingClientRect();if(X<q.left+q.width/2)return setCur(+t.dataset.i)}
+    return setCur(+ts[ts.length-1].dataset.i+1);
+  }
+  const last=row.reduce((a,b)=>b.r.right>a.r.right?b:a);
+  setCur(Math.max(...idx(last.el))+1);
+});
+cap.addEventListener('focus',()=>ed.classList.add('focus'));
+cap.addEventListener('blur',()=>ed.classList.remove('focus'));
+
+/* Physische Tastatur */
+const help=$('#help');
+document.addEventListener('keydown',e=>{
+  if(!help.hidden){if(e.key==='Escape')closeHelp();return}
+  if(e.target&&e.target!==cap&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
+  const m=e.ctrlKey||e.metaKey;
+  if(m){const k=e.key.toLowerCase();
+    if(k==='z'){e.preventDefault();return undo()}
+    if(k==='c'){e.preventDefault();return doCopy()}
+    return;}
+  if(e.altKey&&e.key.length!==1)return;
+  const K=e.key;
+  const nav={Backspace:back,Delete:del,ArrowLeft:()=>setCur(cur-1),ArrowRight:()=>setCur(cur+1),ArrowUp:()=>vert(-1),ArrowDown:()=>vert(1),
+    Home:()=>setCur(lineStart(cur)),End:()=>setCur(lineEnd(cur)),Enter:()=>put1('\n'),Escape:()=>{mode=null;render()}};
+  if(nav[K]){e.preventDefault();return nav[K]()}
+  if(K==='Dead'&&(e.code==='Equal'||e.code==='Backquote')){e.preventDefault();mode=mode==='p'?null:'p';return render()}
+  if(K.length===1||[...K].length===1){e.preventDefault();typeChar(K)}
+});
+cap.addEventListener('input',e=>{if(e.isComposing)return;const v=cap.value;cap.value='';if(v)typeText(v)});
+cap.addEventListener('compositionend',()=>{const v=cap.value;cap.value='';if(v)typeText(v)});
+document.addEventListener('paste',e=>{if(!help.hidden)return;const t=(e.clipboardData||window.clipboardData).getData('text');if(t){e.preventDefault();pasteText(t)}});
+
+/* Kopieren */
+let copying=false;
+function flash(t){msgEl.textContent=t;clearTimeout(msgTimer);msgTimer=setTimeout(()=>{msgEl.textContent=''},6000)}
+function legacyCopy(text){
+  const had=document.activeElement===cap;
+  const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('inputmode','none');
+  ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0';
+  document.body.appendChild(ta);
+  let fired=false,ok=false;const h=ev=>{try{ev.clipboardData.setData('text/plain',text);ev.preventDefault();fired=true}catch(_){}};
+  copying=true;document.addEventListener('copy',h,true);
+  try{try{ta.focus({preventScroll:true})}catch(_){ta.focus()}ta.select();ta.setSelectionRange(0,text.length);ok=document.execCommand('copy')}catch(_){}
+  document.removeEventListener('copy',h,true);copying=false;ta.remove();
+  if(had){try{cap.focus({preventScroll:true})}catch(_){}}
+  return ok||fired;
+}
+function selectOut(){try{const r=document.createRange();r.selectNodeContents(out);const s=getSelection();s.removeAllRanges();s.addRange(r)}catch(_){}}
+function copied(){copyBtn.textContent='Kopiert ✓';copyBtn.classList.add('ok');clearTimeout(copyTimer);
+  copyTimer=setTimeout(()=>{copyBtn.textContent='Kopieren';copyBtn.classList.remove('ok')},2500);
+  flash('Kopiert. In isTest ins Antwortfeld tippen und «Einsetzen» wählen.')}
+function failed(){selectOut();flash('Automatisches Kopieren ist hier gesperrt. Der Text ist markiert: im Menü «Kopieren» wählen.')}
+function doCopy(){
+  const text=outText();if(!text)return flash('Noch nichts zum Kopieren.');
+  if(legacyCopy(text))return copied();
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(copied,failed);return}}catch(_){}
+  failed();
+}
+copyBtn.addEventListener('click',doCopy);
+document.addEventListener('copy',e=>{if(copying)return;const s=getSelection();if(s&&!s.isCollapsed&&out.contains(s.anchorNode))return;
+  const text=outText();if(!text)return;try{e.clipboardData.setData('text/plain',text);e.preventDefault();copied()}catch(_){}});
+
+/* Kopfzeile, Anleitung */
+$('#clear').addEventListener('click',clearAll);
+function openHelp(){help.hidden=false}
+function closeHelp(){help.hidden=true}
+$('#helpbtn').addEventListener('click',openHelp);
+$('#helpx').addEventListener('click',closeHelp);
+help.addEventListener('click',e=>{if(e.target===help)closeHelp()});
+if(TASK){const t=$('#task');t.hidden=false;t.innerHTML='<b>Aufgabe</b>';t.appendChild(document.createTextNode(TASK))}
+
+load();renderLetters();render();
+if(!matchMedia('(pointer:coarse)').matches){try{cap.focus({preventScroll:true})}catch(_){}}
+window.ReaktionsEditor={outText,typeText,get tokens(){return T}};
+}
+</script>
+</body>
+</html>
